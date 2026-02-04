@@ -34,3 +34,31 @@ IGNORE_DIRS = [
     "venv", ".venv", "dist", "build",
     ".next", ".nuxt", "vendor"
 ]
+
+# Tree-sitter language mappings (extension -> language identifier)
+TREE_SITTER_LANGUAGES = {
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".ts": "typescript",
+    ".tsx": "tsx",
+    ".java": "java",
+    ".go": "go",
+    ".rs": "rust",
+    ".c": "c",
+    ".cpp": "cpp",
+    ".cc": "cpp",
+    ".h": "c",
+    ".hpp": "cpp",
+}
+
+# Node types to extract for each language
+LANGUAGE_NODE_TYPES = {
+    "javascript": ["function_declaration", "function_expression", "arrow_function", "class_declaration", "method_definition"],
+    "typescript": ["function_declaration", "function_expression", "arrow_function", "class_declaration", "method_definition"],
+    "tsx": ["function_declaration", "function_expression", "arrow_function", "class_declaration", "method_definition"],
+    "java": ["method_declaration", "class_declaration", "interface_declaration", "constructor_declaration"],
+    "go": ["function_declaration", "method_declaration", "type_declaration"],
+    "rust": ["function_item", "impl_item", "struct_item", "enum_item"],
+    "c": ["function_definition", "struct_specifier"],
+    "cpp": ["function_definition", "class_specifier", "struct_specifier"],
+}

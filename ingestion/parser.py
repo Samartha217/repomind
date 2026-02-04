@@ -1,5 +1,18 @@
+"""
+Code parser module.
+Uses Python AST for Python files, Tree-sitter for other languages,
+and falls back to simple chunking for unsupported files.
+"""
+
 import ast
 from config import CHUNK_SIZE
+
+# Import tree-sitter parser
+from ingestion.tree_sitter_parser import (
+    parse_with_tree_sitter,
+    is_tree_sitter_supported,
+    get_language_for_extension
+)
 
 
 def parse_python_file(content: str, file_path: str) -> list[dict]:
@@ -104,13 +117,32 @@ def simple_chunk(content: str, file_path: str) -> list[dict]:
 
 
 def parse_file(content: str, file_path: str, extension: str) -> list[dict]:
-    """Route to appropriate parser based on file type."""
+    """
+    Route to appropriate parser based on file type.
     
+    - Python files (.py) use built-in AST
+    - Tree-sitter supported files use tree-sitter parsing
+    - Other files fall back to simple chunking
+    """
+    # Python files use built-in AST
     if extension == ".py":
         return parse_python_file(content, file_path)
-    else:
-        # For non-Python files, use simple chunking for now
+    
+    # Check if tree-sitter supports this extension
+    if is_tree_sitter_supported(extension):
+        language = get_language_for_extension(extension)
+        chunks = parse_with_tree_sitter(content, file_path, language)
+        
+        # If tree-sitter found chunks, return them
+        if chunks:
+            return chunks
+        
+        # Otherwise fall back to simple chunking
+        print(f"Tree-sitter found no chunks for {file_path}, falling back to simple chunking")
         return simple_chunk(content, file_path)
+    
+    # Unsupported extensions fall back to simple chunking
+    return simple_chunk(content, file_path)
 
 
 def parse_all_files(files: list[dict]) -> list[dict]:

@@ -386,7 +386,7 @@ if "repo_name" in st.session_state:
             else:
                 st.error("Repository not found. Please re-index.")
         
-        if "flowchart" in st.session_state:
+        if all(key in st.session_state for key in ["flowchart", "description", "architecture"]):
             st.markdown("### 📊 Architecture Diagram")
             render_mermaid(st.session_state["flowchart"])
             
