@@ -1,14 +1,29 @@
 import os
+import re
 import shutil
 from pathlib import Path
 
 from git import Repo
+from git.exc import GitCommandError
 
 from config import IGNORE_DIRS, REPOS_DIR, SUPPORTED_EXTENSIONS
 
 
+def validate_github_url(url: str) -> bool:
+    """Check if a URL looks like a valid GitHub repository URL."""
+    pattern = r"^https?://(www\.)?github\.com/[\w.-]+/[\w.-]+(\.git)?/?$"
+    return bool(re.match(pattern, url))
+
+
 def clone_repo(github_url: str) -> str:
     """Clone a GitHub repo and return the local path."""
+
+    # Validate URL before trying to clone
+    if not validate_github_url(github_url):
+        raise ValueError(
+            f"Invalid GitHub URL: '{github_url}'. "
+            "Expected format: https://github.com/username/repo"
+        )
 
     # Extract repo name from URL
     repo_name = github_url.rstrip("/").split("/")[-1].replace(".git", "")
@@ -18,11 +33,22 @@ def clone_repo(github_url: str) -> str:
     if os.path.exists(local_path):
         shutil.rmtree(local_path)
 
-    # Clone
+    # Clone — this can fail for many reasons
     print(f"Cloning {github_url}...")
-    Repo.clone_from(github_url, local_path)
-    print(f"Cloned to {local_path}")
+    try:
+        Repo.clone_from(github_url, local_path)
+    except GitCommandError as e:
+        raise RuntimeError(
+            f"Failed to clone '{github_url}'. "
+            "Check that the repository exists and is public."
+        ) from e
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to clone '{github_url}': {e}. "
+            "Check your internet connection."
+        ) from e
 
+    print(f"Cloned to {local_path}")
     return local_path
 
 
@@ -69,9 +95,14 @@ def get_all_files(repo_path: str) -> list[dict]:
 def load_repo(source: str) -> list[dict]:
     """Main function: load from GitHub URL or local path."""
 
+    if not source or not source.strip():
+        raise ValueError("Repository source cannot be empty.")
+
     if source.startswith("http"):
         repo_path = clone_repo(source)
     else:
         repo_path = source
+        if not os.path.exists(repo_path):
+            raise FileNotFoundError(f"Local path does not exist: '{repo_path}'")
 
     return get_all_files(repo_path)

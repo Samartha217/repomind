@@ -10,7 +10,16 @@ class Retriever:
     def search(self, query: str, top_k: int = TOP_K) -> list[dict]:
         """Search for relevant code chunks."""
 
-        results = self.vector_store.similarity_search_with_score(query, k=top_k)
+        if not query or not query.strip():
+            return []
+
+        try:
+            results = self.vector_store.similarity_search_with_score(query, k=top_k)
+        except Exception as e:
+            raise RuntimeError(
+                f"Search failed for '{self.collection_name}': {e}. "
+                "The index may be corrupted — try re-indexing the repository."
+            ) from e
 
         chunks = []
         for doc, score in results:

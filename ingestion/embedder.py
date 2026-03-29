@@ -8,6 +8,12 @@ from config import EMBEDDING_MODEL, OPENAI_API_KEY, STORAGE_DIR
 
 def get_embeddings():
     """Get embedding model instance."""
+    if not OPENAI_API_KEY:
+        raise ValueError(
+            "OPENAI_API_KEY is not set. "
+            "Copy .env.example to .env and add your OpenAI API key."
+        )
+
     return OpenAIEmbeddings(
         model=EMBEDDING_MODEL,
         openai_api_key=OPENAI_API_KEY
@@ -16,6 +22,9 @@ def get_embeddings():
 
 def create_vector_store(chunks: list[dict], collection_name: str) -> Chroma:
     """Embed chunks and store in ChromaDB."""
+
+    if not chunks:
+        raise ValueError("No code chunks to embed. The repository might be empty or contain no supported files.")
 
     embeddings = get_embeddings()
 
@@ -45,14 +54,19 @@ def create_vector_store(chunks: list[dict], collection_name: str) -> Chroma:
 
     print(f"Embedding {len(texts)} chunks...")
 
-    # Create vector store
-    vector_store = Chroma.from_texts(
-        texts=texts,
-        embedding=embeddings,
-        metadatas=metadatas,
-        persist_directory=persist_dir,
-        collection_name=collection_name
-    )
+    try:
+        vector_store = Chroma.from_texts(
+            texts=texts,
+            embedding=embeddings,
+            metadatas=metadatas,
+            persist_directory=persist_dir,
+            collection_name=collection_name
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to create embeddings: {e}. "
+            "Check your OpenAI API key and internet connection."
+        ) from e
 
     print(f"Stored in {persist_dir}")
     return vector_store
@@ -62,6 +76,13 @@ def load_vector_store(collection_name: str) -> Chroma:
     """Load existing vector store."""
 
     persist_dir = os.path.join(STORAGE_DIR, collection_name)
+
+    if not os.path.exists(persist_dir):
+        raise FileNotFoundError(
+            f"No index found for '{collection_name}'. "
+            "Please load and index the repository first."
+        )
+
     embeddings = get_embeddings()
 
     return Chroma(

@@ -51,7 +51,16 @@ Answer based on the code context above:"""
         messages.append({"role": "user", "content": user_message})
 
         # Generate response
-        response = self.llm.invoke(messages)
+        try:
+            response = self.llm.invoke(messages)
+        except Exception as e:
+            return {
+                "answer": (
+                    "Sorry, I couldn't generate a response. "
+                    f"Error: {e}. Please check your API key and try again."
+                ),
+                "sources": sources
+            }
 
         return {
             "answer": response.content,

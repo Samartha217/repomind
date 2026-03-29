@@ -284,23 +284,35 @@ with st.sidebar:
 
     if st.button("🚀 Load & Index", type="primary", use_container_width=True):
         if repo_url:
-            with st.status("Processing...", expanded=True) as status:
-                st.write("Cloning repository...")
-                files = load_repo(repo_url)
+            try:
+                with st.status("Processing...", expanded=True) as status:
+                    st.write("Cloning repository...")
+                    files = load_repo(repo_url)
 
-                st.write(f"Parsing {len(files)} files...")
-                chunks = parse_all_files(files)
+                    if not files:
+                        st.error("No supported code files found in this repository.")
+                    else:
+                        st.write(f"Parsing {len(files)} files...")
+                        chunks = parse_all_files(files)
 
-                st.write(f"Embedding {len(chunks)} chunks...")
-                repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
-                create_vector_store(chunks, collection_name=repo_name)
+                        st.write(f"Embedding {len(chunks)} chunks...")
+                        repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
+                        create_vector_store(chunks, collection_name=repo_name)
 
-                status.update(label="✅ Done!", state="complete")
+                        status.update(label="✅ Done!", state="complete")
 
-            st.session_state["repo_name"] = repo_name
-            st.session_state["repo_path"] = f"repos/{repo_name}"
-            st.session_state["chat_history"] = []
-            st.rerun()
+                        st.session_state["repo_name"] = repo_name
+                        st.session_state["repo_path"] = f"repos/{repo_name}"
+                        st.session_state["chat_history"] = []
+                        st.rerun()
+            except ValueError as e:
+                st.error(f"⚠️ {e}")
+            except RuntimeError as e:
+                st.error(f"⚠️ {e}")
+            except Exception as e:
+                st.error(f"⚠️ Something went wrong: {e}")
+        else:
+            st.warning("Please enter a GitHub URL.")
 
     st.markdown("---")
     st.markdown("### 📚 Indexed Repos")
@@ -348,23 +360,30 @@ if "repo_name" in st.session_state:
         if query := st.chat_input("Ask anything about the codebase..."):
             st.session_state["chat_history"].append({"role": "user", "content": query})
 
-            with st.spinner("Thinking..."):
-                reformulated = st.session_state["reformulator"].reformulate(
-                    query,
-                    st.session_state["chat_history"][:-1]
-                )
-                chunks = st.session_state["retriever"].search(reformulated)
-                response = st.session_state["generator"].generate(
-                    reformulated,
-                    chunks,
-                    st.session_state["chat_history"][:-1]
-                )
+            try:
+                with st.spinner("Thinking..."):
+                    reformulated = st.session_state["reformulator"].reformulate(
+                        query,
+                        st.session_state["chat_history"][:-1]
+                    )
+                    chunks = st.session_state["retriever"].search(reformulated)
+                    response = st.session_state["generator"].generate(
+                        reformulated,
+                        chunks,
+                        st.session_state["chat_history"][:-1]
+                    )
 
-            st.session_state["chat_history"].append({
-                "role": "assistant",
-                "content": response["answer"],
-                "sources": response["sources"]
-            })
+                st.session_state["chat_history"].append({
+                    "role": "assistant",
+                    "content": response["answer"],
+                    "sources": response["sources"]
+                })
+            except Exception as e:
+                st.session_state["chat_history"].append({
+                    "role": "assistant",
+                    "content": f"Sorry, something went wrong: {e}",
+                    "sources": []
+                })
             st.rerun()
 
     with tab2:

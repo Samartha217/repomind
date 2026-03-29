@@ -35,7 +35,12 @@ Follow-up Question: {query}
 
 Reformulated Question (standalone, no explanation):"""
 
-        response = self.llm.invoke(prompt)
-        reformulated = response.content.strip()
+        try:
+            response = self.llm.invoke(prompt)
+            reformulated = response.content.strip()
+        except Exception:
+            # If reformulation fails, just use the original query.
+            # Better to search with the original than to crash.
+            return query
 
         return reformulated
