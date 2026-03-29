@@ -1,0 +1,95 @@
+# ============================================================
+# RepoMind CI Pipeline
+# ============================================================
+# This file tells GitHub: "Every time someone pushes code,
+# run these checks automatically."
+#
+# It runs on a FREE GitHub-hosted Ubuntu machine.
+# You don't pay anything. GitHub gives you 2,000 minutes/month
+# on the free tier.
+# ============================================================
+
+# --------------------
+# NAME
+# --------------------
+# This shows up in the Actions tab on GitHub
+name: CI
+
+# --------------------
+# TRIGGER (when to run)
+# --------------------
+# "on: push" means this runs every time anyone pushes to any branch.
+# "on: pull_request" means it also runs when someone opens a PR.
+on:
+  push:
+    branches: [ main, master ]    # only run on main/master branch pushes
+  pull_request:
+    branches: [ main, master ]    # and on PRs targeting main/master
+
+# --------------------
+# JOBS (what to run)
+# --------------------
+# A job is a group of steps that run on one machine.
+# We have one job: "lint-and-test"
+jobs:
+  lint-and-test:
+    # Which machine to run on. ubuntu-latest = free Linux VM.
+    # GitHub creates this machine fresh for every run, then destroys it.
+    runs-on: ubuntu-latest
+
+    # --------------------
+    # STEPS (the actual commands)
+    # --------------------
+    # Steps run sequentially — step 2 waits for step 1 to finish.
+    # If any step fails, all following steps are SKIPPED.
+    steps:
+
+      # STEP 1: Check out the code
+      # Without this, the machine has no code — it's a blank Ubuntu box.
+      # "actions/checkout@v4" is a pre-built action that does "git clone".
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # STEP 2: Install Python
+      # The Ubuntu machine has Python, but maybe not the version we need.
+      # This action installs exactly Python 3.12.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # STEP 3: Cache pip dependencies
+      # Without this, pip downloads all packages from scratch every run.
+      # Caching saves ~30-60 seconds per run by reusing downloaded packages.
+      # Think of it like: first run downloads everything, next runs reuse it.
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          # The "key" is like a fingerprint. If requirements.txt changes,
+          # the cache is invalidated and packages are re-downloaded.
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # STEP 4: Install dependencies
+      # Same as running "pip install" on your laptop.
+      # We install project deps + our dev tools (ruff, pytest).
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff pytest
+
+      # STEP 5: Run linter
+      # Same command you run locally: ruff check .
+      # If ruff finds any issues, this step FAILS → the whole pipeline fails.
+      - name: Lint with ruff
+        run: ruff check .
+
+      # STEP 6: Run tests
+      # Same command you run locally: pytest tests/ -v
+      # -v = verbose (shows each test name and pass/fail)
+      # If any test fails, this step FAILS → the whole pipeline fails.
+      - name: Run tests
+        run: pytest tests/ -v

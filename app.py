@@ -1,19 +1,19 @@
+import os
+
 import streamlit as st
 import streamlit.components.v1 as components
-from ingestion.loader import load_repo
-from ingestion.parser import parse_all_files
-from ingestion.embedder import create_vector_store
-from retrieval.retriever import Retriever
-from retrieval.reformulator import QueryReformulator
-from generation.generator import Generator
+
 from analysis.dependency_parser import analyze_repo
 from analysis.diagram_generator import (
-    generate_mermaid_flowchart,
     generate_architecture_description,
-    generate_smart_diagram
+    generate_smart_diagram,
 )
-import os
-import time
+from generation.generator import Generator
+from ingestion.embedder import create_vector_store
+from ingestion.loader import load_repo
+from ingestion.parser import parse_all_files
+from retrieval.reformulator import QueryReformulator
+from retrieval.retriever import Retriever
 
 # Page config
 st.set_page_config(
@@ -111,7 +111,7 @@ st.markdown("""
 
 def render_mermaid(mermaid_code: str):
     """Render Mermaid diagram with export functionality."""
-    
+
     html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -279,32 +279,32 @@ st.markdown('<p class="sub-header">Chat with any codebase • Understand archite
 # Sidebar
 with st.sidebar:
     st.markdown("### 📦 Load Repository")
-    
+
     repo_url = st.text_input("GitHub URL", placeholder="https://github.com/user/repo", label_visibility="collapsed")
-    
+
     if st.button("🚀 Load & Index", type="primary", use_container_width=True):
         if repo_url:
             with st.status("Processing...", expanded=True) as status:
                 st.write("Cloning repository...")
                 files = load_repo(repo_url)
-                
+
                 st.write(f"Parsing {len(files)} files...")
                 chunks = parse_all_files(files)
-                
+
                 st.write(f"Embedding {len(chunks)} chunks...")
                 repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
                 create_vector_store(chunks, collection_name=repo_name)
-                
+
                 status.update(label="✅ Done!", state="complete")
-            
+
             st.session_state["repo_name"] = repo_name
             st.session_state["repo_path"] = f"repos/{repo_name}"
             st.session_state["chat_history"] = []
             st.rerun()
-    
+
     st.markdown("---")
     st.markdown("### 📚 Indexed Repos")
-    
+
     if os.path.exists("storage"):
         repos = [d for d in os.listdir("storage") if os.path.isdir(os.path.join("storage", d))]
         for repo in repos:
@@ -323,16 +323,16 @@ if "repo_name" in st.session_state:
         st.session_state["reformulator"] = QueryReformulator()
         st.session_state["generator"] = Generator()
         st.session_state["current_repo"] = st.session_state["repo_name"]
-    
+
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
-    
+
     # Tabs
     tab1, tab2 = st.tabs(["💬 Chat", "🏗️ Architecture"])
-    
+
     with tab1:
         st.info(f"💬 Chatting with: **{st.session_state['repo_name']}**")
-        
+
         # Chat history
         for msg in st.session_state["chat_history"]:
             if msg["role"] == "user":
@@ -343,11 +343,11 @@ if "repo_name" in st.session_state:
                     with st.expander("📌 View Sources"):
                         for src in msg["sources"]:
                             st.markdown(f'<div class="source-card">{src["file"]} → {src["name"]} (lines {src["lines"]})</div>', unsafe_allow_html=True)
-        
+
         # Chat input
         if query := st.chat_input("Ask anything about the codebase..."):
             st.session_state["chat_history"].append({"role": "user", "content": query})
-            
+
             with st.spinner("Thinking..."):
                 reformulated = st.session_state["reformulator"].reformulate(
                     query,
@@ -359,25 +359,25 @@ if "repo_name" in st.session_state:
                     chunks,
                     st.session_state["chat_history"][:-1]
                 )
-            
+
             st.session_state["chat_history"].append({
                 "role": "assistant",
                 "content": response["answer"],
                 "sources": response["sources"]
             })
             st.rerun()
-    
+
     with tab2:
         st.info(f"🏗️ Architecture for: **{st.session_state['repo_name']}**")
-        
+
         if st.button("🔍 Analyze Architecture", type="primary"):
             repo_path = st.session_state.get("repo_path", f"repos/{st.session_state['repo_name']}")
-            
+
             if os.path.exists(repo_path):
                 with st.spinner("🧠 Analyzing codebase structure..."):
                     analysis = analyze_repo(repo_path)
                     st.session_state["analysis"] = analysis
-                
+
                 with st.spinner("🎨 Generating professional diagram..."):
                     diagram, architecture = generate_smart_diagram(analysis)
                     st.session_state["flowchart"] = diagram
@@ -385,19 +385,19 @@ if "repo_name" in st.session_state:
                     st.session_state["description"] = generate_architecture_description(analysis)
             else:
                 st.error("Repository not found. Please re-index.")
-        
+
         if all(key in st.session_state for key in ["flowchart", "description", "architecture"]):
             st.markdown("### 📊 Architecture Diagram")
             render_mermaid(st.session_state["flowchart"])
-            
+
             st.markdown("---")
-            
+
             col1, col2 = st.columns([1, 1])
-            
+
             with col1:
                 st.markdown("### 📝 Architecture Overview")
                 st.markdown(f'<div class="arch-description">{st.session_state["description"]}</div>', unsafe_allow_html=True)
-            
+
             with col2:
                 st.markdown("### 🔗 External Services")
                 if "architecture" in st.session_state:
@@ -408,7 +408,7 @@ if "repo_name" in st.session_state:
                             {icon} <strong>{svc['name']}</strong>
                         </div>
                         """, unsafe_allow_html=True)
-            
+
             # Layer breakdown
             st.markdown("### 🏛️ Architecture Layers")
             if "architecture" in st.session_state:

@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,7 +31,7 @@ SUPPORTED_EXTENSIONS = [
 
 # Directories to ignore
 IGNORE_DIRS = [
-    "node_modules", ".git", "__pycache__", 
+    "node_modules", ".git", "__pycache__",
     "venv", ".venv", "dist", "build",
     ".next", ".nuxt", "vendor"
 ]

@@ -1,0 +1,42 @@
+# Ruff configuration for RepoMind
+# Docs: https://docs.astral.sh/ruff/settings/
+
+# Which Python version we're targeting
+target-version = "py312"
+
+# Max line length (88 is Black's default — widely used standard)
+line-length = 120
+
+# Which rules to enable
+# Full list: https://docs.astral.sh/ruff/rules/
+[lint]
+select = [
+    "F",    # Pyflakes — catches unused imports, undefined variables, etc.
+    "E",    # pycodestyle errors — basic style issues
+    "W",    # pycodestyle warnings — minor style issues
+    "I",    # isort — keeps imports sorted and organized
+]
+
+# Ignore specific rules that are too noisy for now
+ignore = [
+    "E501",  # line too long — we set line-length above, but some lines are fine longer
+]
+
+# Don't lint these directories
+exclude = [
+    "repos",      # cloned repos — not our code
+    "storage",    # ChromaDB data
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+]
+
+# Per-file rule overrides
+[lint.per-file-ignores]
+# app.py has CSS/JS strings with whitespace — not real Python style issues
+"app.py" = ["W291", "W293"]
+
+# isort settings — how to sort imports
+[lint.isort]
+known-first-party = ["ingestion", "retrieval", "generation", "analysis", "config"]
