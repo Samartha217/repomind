@@ -4,7 +4,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from analysis.dependency_parser import analyze_repo
-from security.report import run_full_scan
 from analysis.diagram_generator import (
     generate_architecture_description,
     generate_smart_diagram,
@@ -15,6 +14,7 @@ from ingestion.loader import load_repo
 from ingestion.parser import parse_all_files
 from retrieval.reformulator import QueryReformulator
 from retrieval.retriever import Retriever
+from security.report import run_full_scan
 
 # Page config
 st.set_page_config(

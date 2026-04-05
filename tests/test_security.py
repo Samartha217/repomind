@@ -4,12 +4,9 @@ These tests run offline — no OSV.dev calls are made.
 """
 
 import json
-import os
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from security.code_scanner import scan_code
 from security.config_scanner import scan_configs
@@ -19,7 +16,6 @@ from security.dependency_scanner import (
     scan_dependencies,
 )
 from security.report import run_full_scan
-
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
