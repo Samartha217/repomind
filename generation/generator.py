@@ -1,14 +1,14 @@
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
-from config import LLM_MODEL, OPENAI_API_KEY
+from config import GROQ_API_KEY, LLM_MODEL
 from retrieval.context_builder import build_context, build_sources_list
 
 
 class Generator:
     def __init__(self):
-        self.llm = ChatOpenAI(
+        self.llm = ChatGroq(
             model=LLM_MODEL,
-            openai_api_key=OPENAI_API_KEY,
+            api_key=GROQ_API_KEY,
             temperature=0.1
         )
 

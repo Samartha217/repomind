@@ -16,12 +16,15 @@ def build_context(chunks: list[dict]) -> str:
             if len(parts) > 1:
                 content = parts[1]
 
+        # Truncate individual chunks to 1500 chars to stay within Groq's token limit
+        content_truncated = content.strip()[:1500]
+
         context_parts.append(f"""
 ---
 **Source {i}:** `{chunk['file_path']}` (lines {chunk['start_line']}-{chunk['end_line']})
 **Type:** {chunk['type']} | **Name:** {chunk['name']}
 ```
-{content.strip()}
+{content_truncated}
 ```
 """)
 

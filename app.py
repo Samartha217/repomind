@@ -281,7 +281,7 @@ st.markdown('<p class="sub-header">Chat with any codebase • Understand archite
 with st.sidebar:
     st.markdown("### 📦 Load Repository")
 
-    repo_url = st.text_input("GitHub URL", placeholder="https://github.com/user/repo", label_visibility="collapsed")
+    repo_url = st.text_input("GitHub URL", placeholder="https://github.com/user/repo")
 
     if st.button("🚀 Load & Index", type="primary", use_container_width=True):
         if repo_url:

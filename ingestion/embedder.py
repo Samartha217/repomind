@@ -1,23 +1,14 @@
 import os
 
 from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 
-from config import EMBEDDING_MODEL, OPENAI_API_KEY, STORAGE_DIR
+from config import EMBEDDING_MODEL, STORAGE_DIR
 
 
 def get_embeddings():
-    """Get embedding model instance."""
-    if not OPENAI_API_KEY:
-        raise ValueError(
-            "OPENAI_API_KEY is not set. "
-            "Copy .env.example to .env and add your OpenAI API key."
-        )
-
-    return OpenAIEmbeddings(
-        model=EMBEDDING_MODEL,
-        openai_api_key=OPENAI_API_KEY
-    )
+    """Get embedding model instance (runs locally via Ollama — no API key needed)."""
+    return OllamaEmbeddings(model=EMBEDDING_MODEL)
 
 
 def create_vector_store(chunks: list[dict], collection_name: str) -> Chroma:
@@ -32,6 +23,9 @@ def create_vector_store(chunks: list[dict], collection_name: str) -> Chroma:
     texts = []
     metadatas = []
 
+    # nomic-embed-text has an 8192 token limit (~6000 chars to be safe)
+    MAX_CHARS = 6000
+
     for chunk in chunks:
         # Create rich text for embedding
         text = f"File: {chunk['file_path']}\n"
@@ -39,6 +33,10 @@ def create_vector_store(chunks: list[dict], collection_name: str) -> Chroma:
         if chunk['docstring']:
             text += f"Docstring: {chunk['docstring']}\n"
         text += f"\n{chunk['content']}"
+
+        # Truncate if too long for the embedding model
+        if len(text) > MAX_CHARS:
+            text = text[:MAX_CHARS]
 
         texts.append(text)
         metadatas.append({
@@ -65,7 +63,8 @@ def create_vector_store(chunks: list[dict], collection_name: str) -> Chroma:
     except Exception as e:
         raise RuntimeError(
             f"Failed to create embeddings: {e}. "
-            "Check your OpenAI API key and internet connection."
+            "Make sure Ollama is running (ollama serve) and nomic-embed-text is installed "
+            "(ollama pull nomic-embed-text)."
         ) from e
 
     print(f"Stored in {persist_dir}")

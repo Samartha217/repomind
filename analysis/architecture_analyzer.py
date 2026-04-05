@@ -1,15 +1,15 @@
 import json
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
-from config import LLM_MODEL, OPENAI_API_KEY
+from config import GROQ_API_KEY, LLM_MODEL
 
 
 class ArchitectureAnalyzer:
     def __init__(self):
-        self.llm = ChatOpenAI(
+        self.llm = ChatGroq(
             model=LLM_MODEL,
-            openai_api_key=OPENAI_API_KEY,
+            api_key=GROQ_API_KEY,
             temperature=0
         )
 
@@ -29,7 +29,13 @@ class ArchitectureAnalyzer:
 
         summary = "CODEBASE STRUCTURE:\n\n"
 
-        for file_path, info in files_analysis["files"].items():
+        # Prioritise entry points, cap total at 25 files to stay within token limits
+        all_files = list(files_analysis["files"].items())
+        entry_points = [(p, i) for p, i in all_files if i["is_entry_point"]]
+        others = [(p, i) for p, i in all_files if not i["is_entry_point"]]
+        selected = (entry_points + others)[:25]
+
+        for file_path, info in selected:
             summary += f"FILE: {file_path}\n"
 
             if info["is_entry_point"]:
@@ -37,22 +43,22 @@ class ArchitectureAnalyzer:
 
             if info["classes"]:
                 summary += "  CLASSES:\n"
-                for cls in info["classes"]:
+                for cls in info["classes"][:3]:
                     summary += f"    - {cls['name']}"
                     if cls["methods"]:
-                        methods = [m["name"] for m in cls["methods"]]
-                        summary += f" (methods: {', '.join(methods[:5])})"
+                        methods = [m["name"] for m in cls["methods"][:4]]
+                        summary += f" (methods: {', '.join(methods)})"
                     summary += "\n"
 
             if info["functions"]:
                 summary += "  FUNCTIONS:\n"
-                for func in info["functions"]:
+                for func in info["functions"][:4]:
                     summary += f"    - {func['name']}({', '.join(func['args'][:3])})\n"
 
             summary += "\n"
 
         summary += "DEPENDENCIES:\n"
-        for dep in files_analysis["dependencies"]:
+        for dep in list(files_analysis["dependencies"])[:30]:
             summary += f"  {dep['from']} --> {dep['to']}\n"
 
         return summary
