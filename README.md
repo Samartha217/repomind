@@ -1,4 +1,4 @@
-# 🧠 RepoMind
+# 🧠 StackVault
 
 AI-powered codebase Q&A and architecture visualization tool. Chat with any GitHub repository and instantly understand its architecture.
 
@@ -44,8 +44,8 @@ Repo → DEPENDENCY PARSER → ARCHITECTURE ANALYZER → DIAGRAM GENERATOR
 
 1. **Clone the repository**
 ```bash
-   git clone https://github.com/Samartha217/repomind.git
-   cd repomind
+   git clone https://github.com/Samartha217/stackvault.git
+   cd stackvault
 ```
 
 2. **Create virtual environment**
@@ -84,7 +84,7 @@ Repo → DEPENDENCY PARSER → ARCHITECTURE ANALYZER → DIAGRAM GENERATOR
 
 ## 📁 Project Structure
 ```
-repomind/
+stackvault/
 ├── app.py                  # Streamlit UI
 ├── config.py               # Configuration
 ├── requirements.txt        # Dependencies

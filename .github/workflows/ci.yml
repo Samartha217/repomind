@@ -1,5 +1,5 @@
 # ============================================================
-# RepoMind CI Pipeline
+# StackVault CI Pipeline
 # ============================================================
 # This file tells GitHub: "Every time someone pushes code,
 # run these checks automatically."

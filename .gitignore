@@ -31,5 +31,5 @@ Thumbs.db
 # Jupyter
 .ipynb_checkpoints/
 
-# Test files
-test_loader.py
+# Pytest
+.pytest_cache/

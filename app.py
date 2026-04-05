@@ -14,10 +14,11 @@ from ingestion.loader import load_repo
 from ingestion.parser import parse_all_files
 from retrieval.reformulator import QueryReformulator
 from retrieval.retriever import Retriever
+from security.report import run_full_scan
 
 # Page config
 st.set_page_config(
-    page_title="RepoMind",
+    page_title="StackVault",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -273,7 +274,7 @@ def render_mermaid(mermaid_code: str):
 
 
 # Header
-st.markdown('<h1 class="main-header">🧠 RepoMind</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🧠 StackVault</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Chat with any codebase • Understand architecture instantly</p>', unsafe_allow_html=True)
 
 # Sidebar
@@ -340,7 +341,7 @@ if "repo_name" in st.session_state:
         st.session_state["chat_history"] = []
 
     # Tabs
-    tab1, tab2 = st.tabs(["💬 Chat", "🏗️ Architecture"])
+    tab1, tab2, tab3 = st.tabs(["💬 Chat", "🏗️ Architecture", "🔒 Security"])
 
     with tab1:
         st.info(f"💬 Chatting with: **{st.session_state['repo_name']}**")
@@ -444,11 +445,95 @@ if "repo_name" in st.session_state:
                                 </div>
                                 """, unsafe_allow_html=True)
 
+    with tab3:
+        st.info(f"🔒 Security scan for: **{st.session_state['repo_name']}**")
+
+        if st.button("🛡️ Scan for Vulnerabilities", type="primary"):
+            repo_path = st.session_state.get("repo_path", f"repos/{st.session_state['repo_name']}")
+            if os.path.exists(repo_path):
+                with st.spinner("Scanning dependencies, code patterns, and configs..."):
+                    try:
+                        report = run_full_scan(repo_path)
+                        st.session_state["security_report"] = report
+                    except Exception as e:
+                        st.error(f"⚠️ Scan failed: {e}")
+            else:
+                st.error("Repository not found locally. Please re-index first.")
+
+        if "security_report" in st.session_state:
+            report = st.session_state["security_report"]
+            summary = report["summary"]
+            findings = report["findings"]
+            errors = report["errors"]
+
+            # Summary row
+            st.markdown("### 📊 Scan Summary")
+            col1, col2, col3, col4, col5 = st.columns(5)
+            col1.metric("Total", summary["total"])
+            col2.metric("🔴 Critical", summary["critical"])
+            col3.metric("🟠 High", summary["high"])
+            col4.metric("🟡 Medium", summary["medium"])
+            col5.metric("🔵 Low", summary["low"])
+
+            # Scanner status
+            scanned = report["scanned"]
+            status_parts = []
+            if scanned["dependencies"]:
+                status_parts.append("✅ Dependencies (OSV.dev)")
+            if scanned["code"]:
+                status_parts.append("✅ Code patterns")
+            if scanned["configs"]:
+                status_parts.append("✅ Config files")
+            if errors:
+                for err in errors:
+                    status_parts.append(f"⚠️ {err}")
+            st.caption("  |  ".join(status_parts))
+
+            st.markdown("---")
+
+            if not findings:
+                st.success("🎉 No vulnerabilities found! The repo looks clean.")
+            else:
+                # Color map
+                severity_color = {
+                    "CRITICAL": "#ff4444",
+                    "HIGH": "#ff8800",
+                    "MEDIUM": "#ffcc00",
+                    "LOW": "#4488ff",
+                }
+                severity_icon = {
+                    "CRITICAL": "🔴",
+                    "HIGH": "🟠",
+                    "MEDIUM": "🟡",
+                    "LOW": "🔵",
+                }
+
+                for finding in findings:
+                    sev = finding.get("severity", "LOW")
+                    color = severity_color.get(sev, "#888")
+                    icon = severity_icon.get(sev, "⚪")
+
+                    # Title line
+                    if finding["type"] == "dependency":
+                        title = f"{icon} **{finding['package']}** `{finding['version']}` — {finding['vuln_id']}"
+                    else:
+                        title = f"{icon} **{finding['name']}** — `{finding['file']}` line {finding.get('line', '?')}"
+
+                    with st.expander(title):
+                        st.markdown(
+                            f"<span style='color:{color}; font-weight:600;'>{sev}</span>",
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(f"**What:** {finding.get('summary') or finding.get('description', '')}")
+                        if finding.get("snippet"):
+                            st.code(finding["snippet"], language="python")
+                        st.markdown(f"**Fix:** {finding.get('fix', 'See advisory for details.')}")
+
 else:
     st.markdown("""
     <div style="text-align: center; padding: 4rem 2rem;">
         <div class="glass-card" style="max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #a5b4fc;">Welcome to RepoMind</h2>
+            <h2 style="color: #a5b4fc;">Welcome to StackVault</h2>
             <p style="color: #8892b0;">
                 Load any GitHub repository and chat with the codebase.<br>
                 Ask questions and understand architecture with AI.
