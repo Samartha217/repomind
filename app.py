@@ -9,6 +9,7 @@ from analysis.diagram_generator import (
     generate_smart_diagram,
 )
 from generation.generator import Generator
+from generation.onboarding import generate_onboarding_guide
 from ingestion.embedder import create_vector_store
 from ingestion.loader import load_repo
 from ingestion.parser import parse_all_files
@@ -341,7 +342,7 @@ if "repo_name" in st.session_state:
         st.session_state["chat_history"] = []
 
     # Tabs
-    tab1, tab2, tab3 = st.tabs(["💬 Chat", "🏗️ Architecture", "🔒 Security"])
+    tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "🏗️ Architecture", "🔒 Security", "🎓 Onboarding"])
 
     with tab1:
         st.info(f"💬 Chatting with: **{st.session_state['repo_name']}**")
@@ -444,6 +445,80 @@ if "repo_name" in st.session_state:
                                     <div style="color: #667eea; font-size: 0.75rem; margin-top: 0.5rem;">📄 {comp['file']}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
+
+    with tab4:
+        st.info(f"🎓 Onboarding guide for: **{st.session_state['repo_name']}**")
+        st.caption("Helps new contributors understand where to start, what to read, and how data flows.")
+
+        if st.button("🚀 Generate Onboarding Guide", type="primary"):
+            with st.spinner("Analysing codebase and generating guide..."):
+                try:
+                    guide = generate_onboarding_guide(st.session_state["retriever"])
+                    st.session_state["onboarding_guide"] = guide
+                except Exception as e:
+                    st.error(f"⚠️ Failed to generate guide: {e}")
+
+        if "onboarding_guide" in st.session_state:
+            guide = st.session_state["onboarding_guide"]
+
+            # Summary
+            if guide.get("summary"):
+                st.markdown("### 🗂️ What This Project Does")
+                st.markdown(
+                    f'<div class="glass-card">{guide["summary"]}</div>',
+                    unsafe_allow_html=True,
+                )
+                st.markdown("")
+
+            col1, col2 = st.columns(2)
+
+            # Entry points
+            with col1:
+                st.markdown("### 📍 Start Here")
+                if guide.get("entry_points"):
+                    for ep in guide["entry_points"]:
+                        st.markdown(f"""
+                        <div class="glass-card">
+                            <div style="font-weight:600; color:#a5b4fc;">📄 {ep['file']}</div>
+                            <div style="color:#8892b0; font-size:0.85rem; margin-top:0.3rem;">{ep['reason']}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.caption("No entry points identified.")
+
+            # Reading order
+            with col2:
+                st.markdown("### 📚 Reading Order")
+                if guide.get("reading_order"):
+                    for item in guide["reading_order"]:
+                        st.markdown(f"""
+                        <div class="glass-card">
+                            <div style="font-weight:600; color:#a5b4fc;">
+                                Step {item['step']} — {item['file']}
+                            </div>
+                            <div style="color:#8892b0; font-size:0.85rem; margin-top:0.3rem;">{item['why']}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.caption("No reading order generated.")
+
+            st.markdown("---")
+
+            # Data flow
+            if guide.get("data_flow"):
+                st.markdown("### 🗺️ How Data Flows")
+                st.markdown(
+                    f'<div class="glass-card" style="font-family:monospace; line-height:2;">{guide["data_flow"]}</div>',
+                    unsafe_allow_html=True,
+                )
+                st.markdown("")
+
+            # Glossary
+            if guide.get("glossary"):
+                st.markdown("### 📖 Glossary")
+                for item in guide["glossary"]:
+                    with st.expander(f"**{item['term']}**"):
+                        st.markdown(item["definition"])
 
     with tab3:
         st.info(f"🔒 Security scan for: **{st.session_state['repo_name']}**")
