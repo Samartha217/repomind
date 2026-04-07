@@ -363,17 +363,31 @@ if "repo_name" in st.session_state:
             st.session_state["chat_history"].append({"role": "user", "content": query})
 
             try:
-                with st.spinner("Thinking..."):
+                with st.status("Thinking...", expanded=True) as status:
+                    st.write("🔄 Reformulating your question...")
                     reformulated = st.session_state["reformulator"].reformulate(
                         query,
                         st.session_state["chat_history"][:-1]
                     )
+                    if reformulated != query:
+                        st.write(f"✅ Understood as: *{reformulated}*")
+                    else:
+                        st.write("✅ Question ready.")
+
+                    st.write("🔍 Searching codebase...")
                     chunks = st.session_state["retriever"].search(reformulated)
+                    files_found = list({c["file_path"] for c in chunks})
+                    st.write(f"✅ Found {len(chunks)} relevant chunks across {len(files_found)} file(s):")
+                    for f in files_found:
+                        st.write(f"   📄 `{f}`")
+
+                    st.write("🧠 Generating answer...")
                     response = st.session_state["generator"].generate(
                         reformulated,
                         chunks,
                         st.session_state["chat_history"][:-1]
                     )
+                    status.update(label="✅ Done!", state="complete", expanded=False)
 
                 st.session_state["chat_history"].append({
                     "role": "assistant",
