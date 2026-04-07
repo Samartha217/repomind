@@ -16,8 +16,7 @@ def build_context(chunks: list[dict]) -> str:
             if len(parts) > 1:
                 content = parts[1]
 
-        # Truncate individual chunks to 1500 chars to stay within Groq's token limit
-        content_truncated = content.strip()[:1500]
+        content_truncated = content.strip()
 
         context_parts.append(f"""
 ---

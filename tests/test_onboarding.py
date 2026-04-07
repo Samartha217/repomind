@@ -110,11 +110,11 @@ class TestBuildCodebaseSummary:
 # ── generate_onboarding_guide ──────────────────────────────────────────────────
 
 class TestGenerateOnboardingGuide:
-    @patch("generation.onboarding.ChatGroq")
-    def test_returns_correct_keys(self, mock_groq_class):
+    @patch("generation.onboarding.ChatGoogleGenerativeAI")
+    def test_returns_correct_keys(self, mock_llm_class):
         mock_llm = MagicMock()
         mock_llm.invoke.return_value.content = json.dumps(MOCK_GUIDE)
-        mock_groq_class.return_value = mock_llm
+        mock_llm_class.return_value = mock_llm
 
         retriever = make_mock_retriever()
         result = generate_onboarding_guide(retriever)
@@ -125,11 +125,11 @@ class TestGenerateOnboardingGuide:
         assert "glossary" in result
         assert "data_flow" in result
 
-    @patch("generation.onboarding.ChatGroq")
-    def test_entry_points_have_correct_fields(self, mock_groq_class):
+    @patch("generation.onboarding.ChatGoogleGenerativeAI")
+    def test_entry_points_have_correct_fields(self, mock_llm_class):
         mock_llm = MagicMock()
         mock_llm.invoke.return_value.content = json.dumps(MOCK_GUIDE)
-        mock_groq_class.return_value = mock_llm
+        mock_llm_class.return_value = mock_llm
 
         retriever = make_mock_retriever()
         result = generate_onboarding_guide(retriever)
@@ -138,11 +138,11 @@ class TestGenerateOnboardingGuide:
             assert "file" in ep
             assert "reason" in ep
 
-    @patch("generation.onboarding.ChatGroq")
-    def test_reading_order_has_steps(self, mock_groq_class):
+    @patch("generation.onboarding.ChatGoogleGenerativeAI")
+    def test_reading_order_has_steps(self, mock_llm_class):
         mock_llm = MagicMock()
         mock_llm.invoke.return_value.content = json.dumps(MOCK_GUIDE)
-        mock_groq_class.return_value = mock_llm
+        mock_llm_class.return_value = mock_llm
 
         retriever = make_mock_retriever()
         result = generate_onboarding_guide(retriever)
@@ -152,11 +152,11 @@ class TestGenerateOnboardingGuide:
             assert "file" in item
             assert "why" in item
 
-    @patch("generation.onboarding.ChatGroq")
-    def test_glossary_has_term_and_definition(self, mock_groq_class):
+    @patch("generation.onboarding.ChatGoogleGenerativeAI")
+    def test_glossary_has_term_and_definition(self, mock_llm_class):
         mock_llm = MagicMock()
         mock_llm.invoke.return_value.content = json.dumps(MOCK_GUIDE)
-        mock_groq_class.return_value = mock_llm
+        mock_llm_class.return_value = mock_llm
 
         retriever = make_mock_retriever()
         result = generate_onboarding_guide(retriever)
@@ -165,21 +165,21 @@ class TestGenerateOnboardingGuide:
             assert "term" in item
             assert "definition" in item
 
-    @patch("generation.onboarding.ChatGroq")
-    def test_strips_markdown_code_fences(self, mock_groq_class):
+    @patch("generation.onboarding.ChatGoogleGenerativeAI")
+    def test_strips_markdown_code_fences(self, mock_llm_class):
         mock_llm = MagicMock()
         mock_llm.invoke.return_value.content = f"```json\n{json.dumps(MOCK_GUIDE)}\n```"
-        mock_groq_class.return_value = mock_llm
+        mock_llm_class.return_value = mock_llm
 
         retriever = make_mock_retriever()
         result = generate_onboarding_guide(retriever)
         assert result["summary"] == MOCK_GUIDE["summary"]
 
-    @patch("generation.onboarding.ChatGroq")
-    def test_invalid_json_returns_fallback(self, mock_groq_class):
+    @patch("generation.onboarding.ChatGoogleGenerativeAI")
+    def test_invalid_json_returns_fallback(self, mock_llm_class):
         mock_llm = MagicMock()
         mock_llm.invoke.return_value.content = "this is not json"
-        mock_groq_class.return_value = mock_llm
+        mock_llm_class.return_value = mock_llm
 
         retriever = make_mock_retriever()
         result = generate_onboarding_guide(retriever)
@@ -189,11 +189,11 @@ class TestGenerateOnboardingGuide:
         assert "entry_points" in result
         assert result["entry_points"] == []
 
-    @patch("generation.onboarding.ChatGroq")
-    def test_summary_is_string(self, mock_groq_class):
+    @patch("generation.onboarding.ChatGoogleGenerativeAI")
+    def test_summary_is_string(self, mock_llm_class):
         mock_llm = MagicMock()
         mock_llm.invoke.return_value.content = json.dumps(MOCK_GUIDE)
-        mock_groq_class.return_value = mock_llm
+        mock_llm_class.return_value = mock_llm
 
         retriever = make_mock_retriever()
         result = generate_onboarding_guide(retriever)

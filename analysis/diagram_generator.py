@@ -1,7 +1,7 @@
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from analysis.architecture_analyzer import ArchitectureAnalyzer, generate_professional_diagram
-from config import GROQ_API_KEY, LLM_MODEL
+from config import GOOGLE_API_KEY, LLM_MODEL
 
 
 def generate_mermaid_flowchart(analysis: dict) -> str:
@@ -118,19 +118,18 @@ def generate_class_diagram(analysis: dict) -> str:
 def generate_architecture_description(analysis: dict) -> str:
     """Use LLM to generate human-readable architecture description."""
 
-    llm = ChatGroq(
+    llm = ChatGoogleGenerativeAI(
         model=LLM_MODEL,
-        api_key=GROQ_API_KEY,
+        google_api_key=GOOGLE_API_KEY,
         temperature=0.1
     )
 
     context = "Repository Structure:\n\n"
 
-    # Limit to 20 most important files to stay within Groq's free tier token limit
     files = list(analysis["files"].items())
     entry_points = [(p, i) for p, i in files if i["is_entry_point"]]
     others = [(p, i) for p, i in files if not i["is_entry_point"]]
-    selected_files = (entry_points + others)[:20]
+    selected_files = (entry_points + others)[:40]
 
     for file_path, info in selected_files:
         context += f"File: {file_path}"
@@ -151,7 +150,7 @@ def generate_architecture_description(analysis: dict) -> str:
         context += "\n"
 
     context += "Dependencies:\n"
-    for dep in list(analysis["dependencies"])[:30]:
+    for dep in list(analysis["dependencies"])[:60]:
         context += f"   {dep['from']} imports from {dep['to']}\n"
 
     prompt = f"""Based on this ACTUAL repository structure, write a clear architecture description.
