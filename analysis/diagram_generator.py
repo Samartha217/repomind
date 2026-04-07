@@ -1,7 +1,7 @@
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
 from analysis.architecture_analyzer import ArchitectureAnalyzer, generate_professional_diagram
-from config import LLM_MODEL, OPENAI_API_KEY
+from config import GROQ_API_KEY, LLM_MODEL
 
 
 def generate_mermaid_flowchart(analysis: dict) -> str:
@@ -118,34 +118,40 @@ def generate_class_diagram(analysis: dict) -> str:
 def generate_architecture_description(analysis: dict) -> str:
     """Use LLM to generate human-readable architecture description."""
 
-    llm = ChatOpenAI(
+    llm = ChatGroq(
         model=LLM_MODEL,
-        openai_api_key=OPENAI_API_KEY,
+        api_key=GROQ_API_KEY,
         temperature=0.1
     )
 
     context = "Repository Structure:\n\n"
 
-    for file_path, info in analysis["files"].items():
+    # Limit to 20 most important files to stay within Groq's free tier token limit
+    files = list(analysis["files"].items())
+    entry_points = [(p, i) for p, i in files if i["is_entry_point"]]
+    others = [(p, i) for p, i in files if not i["is_entry_point"]]
+    selected_files = (entry_points + others)[:20]
+
+    for file_path, info in selected_files:
         context += f"File: {file_path}"
         if info["is_entry_point"]:
             context += " (ENTRY POINT)"
         context += "\n"
 
-        for cls in info["classes"]:
-            docstring = cls['docstring'][:100] if cls['docstring'] else 'No description'
+        for cls in info["classes"][:3]:
+            docstring = cls['docstring'][:60] if cls['docstring'] else ''
             context += f"   class {cls['name']}: {docstring}\n"
-            for method in cls["methods"]:
+            for method in cls["methods"][:4]:
                 context += f"      - {method['name']}()\n"
 
-        for func in info["functions"]:
-            docstring = func['docstring'][:100] if func['docstring'] else 'No description'
+        for func in info["functions"][:4]:
+            docstring = func['docstring'][:60] if func['docstring'] else ''
             context += f"   function {func['name']}(): {docstring}\n"
 
         context += "\n"
 
     context += "Dependencies:\n"
-    for dep in analysis["dependencies"]:
+    for dep in list(analysis["dependencies"])[:30]:
         context += f"   {dep['from']} imports from {dep['to']}\n"
 
     prompt = f"""Based on this ACTUAL repository structure, write a clear architecture description.
