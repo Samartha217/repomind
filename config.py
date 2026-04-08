@@ -5,18 +5,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Keys
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-if not GROQ_API_KEY:
+if not GOOGLE_API_KEY:
     print(
-        "WARNING: GROQ_API_KEY is not set. "
-        "Copy .env.example to .env and add your Groq API key. "
-        "Get one free at https://console.groq.com"
+        "WARNING: GOOGLE_API_KEY is not set. "
+        "Copy .env.example to .env and add your Google API key. "
+        "Get one free at https://aistudio.google.com/apikey"
     )
 
 # Model settings
 EMBEDDING_MODEL = "nomic-embed-text"   # runs locally via Ollama — free, no API key
-LLM_MODEL = "llama-3.3-70b-versatile"  # runs via Groq — free tier, 1000 req/day
+LLM_MODEL = "gemini-2.5-flash"         # runs via Google Gemini — free tier, 250 req/day
 
 # Paths
 REPOS_DIR = "repos"
@@ -27,7 +27,7 @@ CHUNK_SIZE = 1500  # max characters per chunk
 CHUNK_OVERLAP = 200
 
 # Retrieval settings
-TOP_K = 3  # number of chunks to retrieve (kept low for Groq's free tier token limit)
+TOP_K = 10  # number of chunks to retrieve per query
 
 # Supported file extensions
 SUPPORTED_EXTENSIONS = [

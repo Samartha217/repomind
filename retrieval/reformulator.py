@@ -1,13 +1,13 @@
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-from config import GROQ_API_KEY, LLM_MODEL
+from config import GOOGLE_API_KEY, LLM_MODEL
 
 
 class QueryReformulator:
     def __init__(self):
-        self.llm = ChatGroq(
+        self.llm = ChatGoogleGenerativeAI(
             model=LLM_MODEL,
-            api_key=GROQ_API_KEY,
+            google_api_key=GOOGLE_API_KEY,
             temperature=0
         )
 

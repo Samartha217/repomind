@@ -6,12 +6,12 @@ key concepts, and how data flows through the system.
 
 import json
 
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-from config import GROQ_API_KEY, LLM_MODEL
+from config import GOOGLE_API_KEY, LLM_MODEL
 
-# Max chars of codebase summary to send — keeps us within Groq's free tier
-MAX_SUMMARY_CHARS = 12000
+# Max chars of codebase summary to send to the LLM
+MAX_SUMMARY_CHARS = 40000
 
 
 def _build_codebase_summary(retriever) -> str:
@@ -64,7 +64,7 @@ def generate_onboarding_guide(retriever) -> dict:
             "summary": str,
         }
     """
-    llm = ChatGroq(model=LLM_MODEL, api_key=GROQ_API_KEY, temperature=0.2)
+    llm = ChatGoogleGenerativeAI(model=LLM_MODEL, google_api_key=GOOGLE_API_KEY, temperature=0.2)
 
     codebase_summary = _build_codebase_summary(retriever)
 

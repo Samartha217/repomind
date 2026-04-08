@@ -1,15 +1,15 @@
 import json
 
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-from config import GROQ_API_KEY, LLM_MODEL
+from config import GOOGLE_API_KEY, LLM_MODEL
 
 
 class ArchitectureAnalyzer:
     def __init__(self):
-        self.llm = ChatGroq(
+        self.llm = ChatGoogleGenerativeAI(
             model=LLM_MODEL,
-            api_key=GROQ_API_KEY,
+            google_api_key=GOOGLE_API_KEY,
             temperature=0
         )
 
@@ -29,11 +29,11 @@ class ArchitectureAnalyzer:
 
         summary = "CODEBASE STRUCTURE:\n\n"
 
-        # Prioritise entry points, cap total at 25 files to stay within token limits
+        # Prioritise entry points first, then others
         all_files = list(files_analysis["files"].items())
         entry_points = [(p, i) for p, i in all_files if i["is_entry_point"]]
         others = [(p, i) for p, i in all_files if not i["is_entry_point"]]
-        selected = (entry_points + others)[:25]
+        selected = (entry_points + others)[:50]
 
         for file_path, info in selected:
             summary += f"FILE: {file_path}\n"
@@ -58,7 +58,7 @@ class ArchitectureAnalyzer:
             summary += "\n"
 
         summary += "DEPENDENCIES:\n"
-        for dep in list(files_analysis["dependencies"])[:30]:
+        for dep in list(files_analysis["dependencies"])[:60]:
             summary += f"  {dep['from']} --> {dep['to']}\n"
 
         return summary
