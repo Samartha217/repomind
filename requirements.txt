@@ -14,6 +14,10 @@ langchain-ollama
 # Vector DB
 chromadb
 
+# Hybrid search + reranking
+rank-bm25
+flashrank
+
 # Tree-sitter for multi-language parsing
 tree-sitter>=0.21.0
 tree-sitter-python>=0.21.0

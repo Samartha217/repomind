@@ -1,6 +1,9 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from pathlib import Path
 
-from analysis.architecture_analyzer import ArchitectureAnalyzer, generate_professional_diagram
+from langchain_google_genai import ChatGoogleGenerativeAI
+from pyvis.network import Network
+
+from analysis.architecture_analyzer import LAYER_COLORS, ArchitectureAnalyzer, generate_professional_diagram
 from config import GOOGLE_API_KEY, LLM_MODEL
 
 
@@ -192,3 +195,67 @@ def generate_smart_diagram(analysis: dict) -> tuple[str, dict]:
     diagram = generate_professional_diagram(architecture)
 
     return diagram, architecture
+
+
+def generate_pyvis_diagram(files_analysis: dict, architecture: dict) -> str:
+    """
+    Generate an interactive Pyvis/vis.js diagram from the real import graph.
+    Returns an HTML string that can be rendered via streamlit.components.v1.html().
+    """
+    net = Network(
+        height="620px",
+        width="100%",
+        bgcolor="#0f0f1a",
+        font_color="#e2e8f0",
+        directed=True,
+    )
+    net.set_options("""{
+      "physics": {
+        "stabilization": {"iterations": 100},
+        "barnesHut": {"gravitationalConstant": -8000, "springLength": 120}
+      },
+      "edges": {"arrows": {"to": {"enabled": true, "scaleFactor": 0.6}}, "color": {"color": "#4a5568"}},
+      "nodes": {"font": {"size": 13}},
+      "interaction": {"hover": true, "tooltipDelay": 200}
+    }""")
+
+    cluster_map: dict = architecture.get("_cluster_map", {})
+
+    for file_path, info in files_analysis["files"].items():
+        cid = cluster_map.get(file_path, 0)
+        color = LAYER_COLORS[cid % len(LAYER_COLORS)]
+        label = Path(file_path).name
+
+        classes = [c["name"] for c in info.get("classes", [])]
+        functions = [f["name"] for f in info.get("functions", [])]
+        tooltip_lines = [f"<b>{file_path}</b>"]
+        if classes:
+            tooltip_lines.append(f"Classes: {', '.join(classes[:5])}")
+        if functions:
+            tooltip_lines.append(f"Functions: {', '.join(functions[:5])}")
+        tooltip = "<br>".join(tooltip_lines)
+
+        net.add_node(
+            file_path,
+            label=label,
+            color=color,
+            title=tooltip,
+            size=18,
+            borderWidth=2,
+        )
+
+    # Resolve import targets to actual file paths (same logic as build_graph)
+    file_stems = {Path(f).stem: f for f in files_analysis["files"]}
+    seen_edges: set = set()
+
+    for dep in files_analysis.get("dependencies", []):
+        src = dep["from"]
+        module_base = dep["to"].split(".")[0]
+        target = file_stems.get(module_base)
+        if target and target != src and target in files_analysis["files"]:
+            key = f"{src}→{target}"
+            if key not in seen_edges:
+                seen_edges.add(key)
+                net.add_edge(src, target)
+
+    return net.generate_html()
