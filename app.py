@@ -6,6 +6,7 @@ import streamlit.components.v1 as components
 from analysis.dependency_parser import analyze_repo
 from analysis.diagram_generator import (
     generate_architecture_description,
+    generate_pyvis_diagram,
     generate_smart_diagram,
 )
 from generation.generator import Generator
@@ -417,13 +418,19 @@ if "repo_name" in st.session_state:
                     diagram, architecture = generate_smart_diagram(analysis)
                     st.session_state["flowchart"] = diagram
                     st.session_state["architecture"] = architecture
+                    st.session_state["pyvis_html"] = generate_pyvis_diagram(analysis, architecture)
                     st.session_state["description"] = generate_architecture_description(analysis)
             else:
                 st.error("Repository not found. Please re-index.")
 
         if all(key in st.session_state for key in ["flowchart", "description", "architecture"]):
             st.markdown("### 📊 Architecture Diagram")
-            render_mermaid(st.session_state["flowchart"])
+            view_tab1, view_tab2 = st.tabs(["🗺️ Interactive Graph", "📊 Flow Diagram"])
+            with view_tab1:
+                if "pyvis_html" in st.session_state:
+                    components.html(st.session_state["pyvis_html"], height=650, scrolling=False)
+            with view_tab2:
+                render_mermaid(st.session_state["flowchart"])
 
             st.markdown("---")
 
